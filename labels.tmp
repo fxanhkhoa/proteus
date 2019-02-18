@@ -1,0 +1,28 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.1.30</VERSION>
+ <DEVICE>ATmega8</DEVICE>
+ <WORKING_DIR>C:\Users\Anh Khoa\Documents\proteus</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:\Program Files (x86)\Atmel\AVR Tools\AvrAssembler2\Appnotes</DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>C:\Users\Anh Khoa\Documents\proteus\test1.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:\Program Files (x86)\Atmel\AVR Tools\AvrAssembler2\Appnotes\M8DEF.INC</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>C:\Users\Anh Khoa\Documents\proteus\test1.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>C:\Users\Anh Khoa\Documents\proteus\test1.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>C:\Users\Anh Khoa\Documents\proteus\test1.map</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <BATDAU><FILE>C:\Users\Anh Khoa\Documents\proteus\test1.asm</FILE><LINE>7</LINE></BATDAU>
+  <MAIN><FILE>C:\Users\Anh Khoa\Documents\proteus\test1.asm</FILE><LINE>17</LINE></MAIN>
+  <DELAY><FILE>C:\Users\Anh Khoa\Documents\proteus\test1.asm</FILE><LINE>52</LINE></DELAY>
+  <DELAY0><FILE>C:\Users\Anh Khoa\Documents\proteus\test1.asm</FILE><LINE>54</LINE></DELAY0>
+  <DELAY1><FILE>C:\Users\Anh Khoa\Documents\proteus\test1.asm</FILE><LINE>56</LINE></DELAY1>
+ </LABELS>
+</ASSEMBLER_INFO>

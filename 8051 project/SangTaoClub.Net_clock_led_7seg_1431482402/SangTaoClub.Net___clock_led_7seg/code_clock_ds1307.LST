@@ -1,0 +1,557 @@
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 1   
+
+
+C51 COMPILER V8.05a, COMPILATION OF MODULE CODE_CLOCK_DS1307
+OBJECT MODULE PLACED IN code_clock_ds1307.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE code_clock_ds1307.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          
+   2          #include <REGX51.H> //Thu vien 8051
+   3          /***************Dia chi giao tiep DS1307*********************/
+   4          #define DS1307_SEC              0x00 //Giay
+   5          #define DS1307_MIN                  0x01 //Phut
+   6          #define DS1307_HOUR         0x02 //Gio
+   7          #define DS1307_DAY          0x03 //Thu
+   8          #define DS1307_DATE         0x04 //Ngay
+   9          #define DS1307_MONTH        0x05 //Thang
+  10          #define DS1307_YEAR         0x06 //Nam
+  11          /****************Ket noi voi DS1307***************************/
+  12          #define SCL     P0_3
+  13          #define SDA             P0_2
+  14          #define SOUT    P0_4
+  15          /****************Nut nhan chinh ngay gio***********************/
+  16          #define MODE    P3_4
+  17          #define UP              P3_5
+  18          #define DOWN    P3_6
+  19          #define SAVE    P3_7
+  20          /****************LED nhay theo giay***************************/
+  21          #define LED             P0_6
+  22          /********************DATA OUT 7seg**************************/
+  23          #define DOUT    P2
+  24          /***************Cac chan quet 12 LED 7 doan*******************/
+  25          #define D1_8    P1                //Quet hang chuc va don vi: ngay, thang, nam, gio
+  26          #define D9              P3_0      //Quet so phut hang chuc
+  27          #define D10             P3_1      //Quet so phut hang don vi
+  28          #define D11             P3_2      //Quet so giay hang chuc
+  29          #define D12             P3_3      //Quet so giay hang don vi
+  30          /****************Khai bao bien va mang du lieu***************************/
+  31          unsigned char Mang[10]={0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};//Mang LED 7
+  32          unsigned char SoGioHangChuc,SoGioHangDonVi,SoPhutHangChuc,SoPhutHangDonVi,SoGiayHangChuc,SoGiayHangDonVi;
+  33          unsigned char SoNgayHangChuc,SoNgayHangDonVi,SoThangHangChuc,SoThangHangDonVi,SoNamHangChuc,SoNamHangDonVi
+             -;
+  34          unsigned int time_4,time_5;
+  35          char sec,hour,min,day,month,year;
+  36          unsigned char KT_MODE=0,time_3,OK=0,so;
+  37          /****************Ctr tao tre***************************/
+  38          void delay_ms(unsigned int ms)                     
+  39          {
+  40   1              unsigned int i,j;
+  41   1              for(i=0;i<ms;i++)
+  42   1                      for(j=0;j<80;j++);
+  43   1      }
+  44          /****************Ctr giao tiep IC DS1307***************************/
+  45          void I2C_time_5art()     //ham khoi dong I2C
+  46          {
+  47   1              SCL = 1;                 
+  48   1              SDA = 1;
+  49   1              
+  50   1              SDA = 0; 
+  51   1              SCL = 0;
+  52   1               
+  53   1      }
+  54          void I2C_time_5op()       
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 2   
+
+  55          {
+  56   1              SCL = 1; 
+  57   1              SDA = 0;
+  58   1                
+  59   1              SDA=1;
+  60   1              SCL=1;
+  61   1              
+  62   1      }
+  63          unsigned char I2C_write(unsigned char dat)
+  64          {
+  65   1              unsigned char i;
+  66   1              for (i=0;i<8;i++)
+  67   1              {
+  68   2                      SDA = (dat & 0x80); ///? 1:0;
+  69   2                      SCL=1;
+  70   2                      SCL=0;
+  71   2                      dat<<=1;
+  72   2              }
+  73   1              SCL = 1; 
+  74   1              SCL = 0;
+  75   1              return dat;
+  76   1      }
+  77          unsigned char I2C_read(void)
+  78          {
+  79   1              bit rd_bit;
+  80   1              unsigned char i, dat;
+  81   1              dat = 0x00;
+  82   1              for(i=0;i<8;i++)                /* For loop read data 1 byte */
+  83   1              {
+  84   2                      SCL = 1;
+  85   2                      rd_bit = SDA;           /* Keep for check acknowledge */
+  86   2                      dat = dat<<1;
+  87   2                      dat = dat | rd_bit; /* Keep bit data in dat */
+  88   2                      SCL = 0;                        /* Clear SCL */
+  89   2              }
+  90   1              return dat;
+  91   1      }
+  92          // CAC CHUONG TRINH CON CHO DS1307
+  93          //******************************************************************************
+  94          
+  95          void DS1307_Write(unsigned char addr,unsigned char dat)
+  96          {
+  97   1              unsigned int temp;
+  98   1              //********************************************** 
+  99   1              temp = dat ;                                            /*HEX to BCD*/
+ 100   1              dat = (((dat/10)*16)|(temp %10));       /*for Led 7seg*/
+ 101   1              //**********************************************
+ 102   1              I2C_time_5art();                /* time_5art i2c bus */
+ 103   1              I2C_write(0XD0);        /* Connect to DS1307 */
+ 104   1              I2C_write(addr);        /* Requetime_5 RAM address on DS1307 */
+ 105   1              I2C_write(dat);         /* Connect to DS1307 for Read */
+ 106   1              I2C_time_5op();
+ 107   1      }
+ 108          unsigned char DS1307_Read(unsigned char addr)
+ 109          {
+ 110   1              unsigned int tm,ret;
+ 111   1              I2C_time_5art();                /* time_5art i2c bus */
+ 112   1              I2C_write(0xD0);        /* Connect to DS1307 */
+ 113   1              I2C_write(addr);        /* Requetime_5 RAM address on DS1307 */
+ 114   1              I2C_time_5art();                /* time_5art i2c bus */
+ 115   1              I2C_write(0XD1);        /* Connect to DS1307 for Read */
+ 116   1              ret = I2C_read();       /* Receive data */
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 3   
+
+ 117   1              I2C_time_5op();
+ 118   1              //**********************************************************
+ 119   1              tm = ret;                                                       /*BCD to HEX*/
+ 120   1              ret = (((ret/16)*10)+ (tm & 0x0f));     /*for Led 7seg*/
+ 121   1              //********************************************************** 
+ 122   1              return ret;
+ 123   1      }
+ 124          void DS1307_Set(){
+ 125   1              //Ghi du lieu ngay gio vao DS1307
+ 126   1              DS1307_Write(DS1307_SEC,sec);
+ 127   1              DS1307_Write(DS1307_MIN,min);       
+ 128   1              DS1307_Write(DS1307_HOUR,hour);       
+ 129   1              DS1307_Write(DS1307_DATE,day);    
+ 130   1              DS1307_Write(DS1307_MONTH,month);  
+ 131   1              DS1307_Write(DS1307_YEAR,year); 
+ 132   1      }
+ 133          void DS1307_GetTime(){
+ 134   1              //Doc du lieu gio tu DS1307
+ 135   1              hour=DS1307_Read(DS1307_HOUR);
+ 136   1              min=DS1307_Read(DS1307_MIN);
+ 137   1              sec=DS1307_Read(DS1307_SEC);
+ 138   1      }
+ 139          void DS1307_GetDate(){
+ 140   1              //Doc du lieu ngay tu DS1307
+ 141   1              day=DS1307_Read(DS1307_DATE);
+ 142   1              month=DS1307_Read(DS1307_MONTH);
+ 143   1              year=DS1307_Read(DS1307_YEAR);
+ 144   1      }//End code DS1307
+ 145          /****************Ctr quet 12 LED 7 doan ***************************/
+ 146          void Display(){//Ham hien thi ngay, thang, nam, gio, phut, giay 
+ 147   1              D1_8=0xfe;
+ 148   1              DOUT=Mang[SoNgayHangChuc];
+ 149   1              delay_ms(1);DOUT=0xff;
+ 150   1              D1_8=0xfd;
+ 151   1              DOUT=Mang[SoNgayHangDonVi];
+ 152   1              delay_ms(1);DOUT=0xff;
+ 153   1              D1_8=0xfb;
+ 154   1              DOUT=Mang[SoThangHangChuc];
+ 155   1              delay_ms(1);DOUT=0xff;
+ 156   1              D1_8=0xf7;
+ 157   1              DOUT=Mang[SoThangHangDonVi];
+ 158   1              delay_ms(1);DOUT=0xff;
+ 159   1              D1_8=0xef; 
+ 160   1              DOUT=Mang[SoNamHangChuc];
+ 161   1              delay_ms(1);DOUT=0xff;
+ 162   1              D1_8=0xdf;
+ 163   1              DOUT=Mang[SoNamHangDonVi];
+ 164   1              delay_ms(1);DOUT=0xff;
+ 165   1              D1_8=0xbf;
+ 166   1              DOUT=Mang[SoGioHangChuc];
+ 167   1              delay_ms(1);DOUT=0xff;
+ 168   1              D1_8=0x7f;
+ 169   1              DOUT=Mang[SoGioHangDonVi];
+ 170   1              delay_ms(1);DOUT=0xff;
+ 171   1              D1_8=0xff;D9=0;
+ 172   1              DOUT=Mang[SoPhutHangChuc];
+ 173   1              delay_ms(1);DOUT=0xff;
+ 174   1              D9=1;D10=0;
+ 175   1              DOUT=Mang[SoPhutHangDonVi];
+ 176   1              delay_ms(1);DOUT=0xff;
+ 177   1              D10=1;D11=0; 
+ 178   1              DOUT=Mang[SoGiayHangChuc];
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 4   
+
+ 179   1              delay_ms(1);DOUT=0xff;
+ 180   1              D11=1;D12=0;
+ 181   1              DOUT=Mang[SoGiayHangDonVi];
+ 182   1              delay_ms(1);DOUT=0xff;
+ 183   1              D12=1;
+ 184   1      }
+ 185          void Setting(){//Ham hien thi qua trinh chinh ngay gio
+ 186   1              if(KT_MODE==4 && time_5<100){
+ 187   2                      D1_8=0xfe;
+ 188   2                      DOUT=0xff;
+ 189   2                      delay_ms(1);
+ 190   2                      D1_8=0xfd;
+ 191   2                      DOUT=0xff;
+ 192   2                      delay_ms(1);    
+ 193   2              }else{ 
+ 194   2                      D1_8=0xfe;
+ 195   2                      DOUT=Mang[SoNgayHangChuc];
+ 196   2                      delay_ms(1);DOUT=0xff;
+ 197   2                      D1_8=0xfd;
+ 198   2                      DOUT=Mang[SoNgayHangDonVi];
+ 199   2                      delay_ms(1);DOUT=0xff;
+ 200   2                      if(time_5>200) time_5=0;
+ 201   2              }
+ 202   1              if(KT_MODE==5 && time_5<100){
+ 203   2                      D1_8=0xfb;
+ 204   2                      DOUT=0xff;
+ 205   2                      delay_ms(1);
+ 206   2                      D1_8=0xf7;
+ 207   2                      DOUT=0xff;
+ 208   2                      delay_ms(1);    
+ 209   2              }else{ 
+ 210   2                      D1_8=0xfb;
+ 211   2                      DOUT=Mang[SoThangHangChuc];
+ 212   2                      delay_ms(1);DOUT=0xff;
+ 213   2                      D1_8=0xf7;
+ 214   2                      DOUT=Mang[SoThangHangDonVi];
+ 215   2                      delay_ms(1);DOUT=0xff;
+ 216   2                      if(time_5>200) time_5=0;
+ 217   2              }
+ 218   1              if(KT_MODE==6 && time_5<100){
+ 219   2                      D1_8=0xef;
+ 220   2                      DOUT=0xff;
+ 221   2                      delay_ms(1);
+ 222   2                      D1_8=0xdf;
+ 223   2                      DOUT=0xff;
+ 224   2                      delay_ms(1);    
+ 225   2              }else{ 
+ 226   2                      D1_8=0xef; 
+ 227   2                      DOUT=Mang[SoNamHangChuc];
+ 228   2                      delay_ms(1);DOUT=0xff;
+ 229   2                      D1_8=0xdf;
+ 230   2                      DOUT=Mang[SoNamHangDonVi];
+ 231   2                      delay_ms(1);DOUT=0xff;
+ 232   2              }
+ 233   1              if(KT_MODE==1 && time_5<100){
+ 234   2                      D1_8=0xbf;
+ 235   2                      DOUT=0xff;
+ 236   2                      delay_ms(1);
+ 237   2                      D1_8=0x7f;
+ 238   2                      DOUT=0xff;
+ 239   2                      delay_ms(1);    
+ 240   2              }else{ 
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 5   
+
+ 241   2                      D1_8=0xbf; 
+ 242   2                      DOUT=Mang[SoGioHangChuc];
+ 243   2                      delay_ms(1);DOUT=0xff;
+ 244   2                      D1_8=0x7f;
+ 245   2                      DOUT=Mang[SoGioHangDonVi];
+ 246   2                      delay_ms(1);DOUT=0xff;
+ 247   2              }       
+ 248   1              if(KT_MODE==2 && time_5<100){
+ 249   2                      D1_8=0xff;D9=0;
+ 250   2                      DOUT=0xff;
+ 251   2                      delay_ms(1);
+ 252   2                      D9=1;D10=0;
+ 253   2                      DOUT=0xff;
+ 254   2                      delay_ms(1);    
+ 255   2              }else{ 
+ 256   2                      D1_8=0xff;D9=0; 
+ 257   2                      DOUT=Mang[SoPhutHangChuc];
+ 258   2                      delay_ms(1);DOUT=0xff;
+ 259   2                      D9=1;D10=0;
+ 260   2                      DOUT=Mang[SoPhutHangDonVi];
+ 261   2                      delay_ms(1);DOUT=0xff;
+ 262   2              }
+ 263   1              if(KT_MODE==3 && time_5<100){
+ 264   2                      D10=1;D11=0;
+ 265   2                      DOUT=0xff;
+ 266   2                      delay_ms(1);
+ 267   2                      D11=1;D12=0;
+ 268   2                      DOUT=0xff;
+ 269   2                      delay_ms(1);
+ 270   2                      D12=1;
+ 271   2                      delay_ms(1);    
+ 272   2              }else{ 
+ 273   2                      D10=1;D11=0; 
+ 274   2                      DOUT=Mang[SoGiayHangChuc];
+ 275   2                      delay_ms(1);DOUT=0xff;
+ 276   2                      D11=1;D12=0;
+ 277   2                      DOUT=Mang[SoGiayHangDonVi];
+ 278   2                      delay_ms(1);DOUT=0xff;
+ 279   2                      D12=1;
+ 280   2                      delay_ms(1);
+ 281   2              }
+ 282   1              if(time_5>300){ time_5=0;}
+ 283   1      }
+ 284          
+ 285          /****************Ctr chuyen doi so sang LED 7 doan***************************/
+ 286          void Convert_Number(){
+ 287   1              SoNgayHangChuc=day/10;
+ 288   1              SoNgayHangDonVi=day%10;
+ 289   1              SoThangHangChuc=month/10;
+ 290   1              SoThangHangDonVi=month%10;
+ 291   1              SoNamHangChuc=year/10;
+ 292   1              SoNamHangDonVi=year%10;
+ 293   1              SoGiayHangChuc=sec/10;
+ 294   1              SoGiayHangDonVi=sec%10;
+ 295   1              SoPhutHangChuc=min/10;
+ 296   1              SoPhutHangDonVi=min%10;
+ 297   1              SoGioHangChuc=hour/10;
+ 298   1              SoGioHangDonVi=hour%10;
+ 299   1      }
+ 300          
+ 301          /****************Ctr phim nhan chinh ngay gio***************************/
+ 302          void ScanKey(){
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 6   
+
+ 303   1              if(!MODE){
+ 304   2                      LED=0;
+ 305   2                      delay_ms(50);
+ 306   2                      KT_MODE++;
+ 307   2                      time_5=0;       
+ 308   2                      if(KT_MODE>6)KT_MODE=1;
+ 309   2                      time_4=0;
+ 310   2                      while(!MODE);   
+ 311   2                      OK=1;
+ 312   2              }
+ 313   1              if(!SAVE && OK){        
+ 314   2                      delay_ms(20);
+ 315   2                      if(KT_MODE){
+ 316   3                              DS1307_Set(); 
+ 317   3                              DS1307_GetDate();
+ 318   3                      }
+ 319   2                      KT_MODE=0;
+ 320   2                      OK=0;
+ 321   2                      time_4=0;
+ 322   2              }
+ 323   1              if(time_4>30000 && KT_MODE){    
+ 324   2                      DS1307_GetDate();
+ 325   2                      KT_MODE=0;
+ 326   2                      OK=0;
+ 327   2                      time_4=0;
+ 328   2              }
+ 329   1              if(KT_MODE)
+ 330   1              {
+ 331   2                      switch(KT_MODE)
+ 332   2                      {
+ 333   3                              case 4:    //chinh ngay
+ 334   3                              {
+ 335   4                                      if(!DOWN)
+ 336   4                                      {
+ 337   5                                              delay_ms(20);
+ 338   5                                              day--;
+ 339   5                                              if(day<1)
+ 340   5                                                      day=31; time_4=0;
+ 341   5                                              while(!DOWN);
+ 342   5                                      }
+ 343   4                                      else if(!UP)
+ 344   4                                      {
+ 345   5                                              delay_ms(20);
+ 346   5                                              day++;
+ 347   5                                              if(day>31)
+ 348   5                                                      day=1;time_4=0;
+ 349   5                                              while(!UP);
+ 350   5                                      }       
+ 351   4                              }
+ 352   3                              break;
+ 353   3                              case 5:   //chinh thang
+ 354   3                              {                               
+ 355   4                                      if(!DOWN)
+ 356   4                                      {
+ 357   5                                              delay_ms(20);
+ 358   5                                              month--;
+ 359   5                                              if(month<1)
+ 360   5                                                      month=12;time_4=0;
+ 361   5                                              while(!DOWN);
+ 362   5                                      }
+ 363   4                                      else if(!UP)
+ 364   4                                      {
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 7   
+
+ 365   5                                              delay_ms(20);
+ 366   5                                              month++;
+ 367   5                                              if(month>12)
+ 368   5                                                      month=1;time_4=0;
+ 369   5                                              while(!UP);
+ 370   5                                      }
+ 371   4                              }
+ 372   3                              break;
+ 373   3                              case 6:  //chinh nam
+ 374   3                              { 
+ 375   4                              
+ 376   4                                      if(!DOWN)
+ 377   4                                      {
+ 378   5                                              delay_ms(20);
+ 379   5                                              year--;
+ 380   5                                              if(year<0)
+ 381   5                                                      year=99;
+ 382   5                                              while(!DOWN);time_4=0;
+ 383   5                                      }
+ 384   4                                      else if(!UP)
+ 385   4                                      {
+ 386   5                                              delay_ms(20);
+ 387   5                                              year++;
+ 388   5                                              if(year>99)
+ 389   5                                                      year=0;
+ 390   5                                              while(!UP);time_4=0;
+ 391   5                                      }       
+ 392   4                              }
+ 393   3                              break;
+ 394   3                      
+ 395   3                              case 1:    //chinh gio
+ 396   3                              { 
+ 397   4                              
+ 398   4                                      if(!DOWN)
+ 399   4                                      {
+ 400   5                                              delay_ms(20);
+ 401   5                                              hour--;
+ 402   5                                              if(hour<0) hour=23;
+ 403   5                                              time_4=0;
+ 404   5                                              while(!DOWN);
+ 405   5                                      }
+ 406   4                                      else if(!UP)
+ 407   4                                      {
+ 408   5                                              delay_ms(20);
+ 409   5                                              hour++;
+ 410   5                                              if(hour>23)
+ 411   5                                                      hour=0;time_4=0;
+ 412   5                                              while(!UP);
+ 413   5                                      }
+ 414   4                              }
+ 415   3                              break;   //chinh phut
+ 416   3                              case 2:
+ 417   3                              { 
+ 418   4                                      if(!DOWN)
+ 419   4                                      {
+ 420   5                                              delay_ms(20);
+ 421   5                                              min--;
+ 422   5                                              if(min<0)
+ 423   5                                                      min=59;time_4=0;
+ 424   5                                              while(!DOWN);
+ 425   5                                      }
+ 426   4                                      else if(!UP)
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 8   
+
+ 427   4                                      {
+ 428   5                                              delay_ms(20);
+ 429   5                                              min++;
+ 430   5                                              if(min>59)
+ 431   5                                                      min=0;time_4=0;
+ 432   5                                              while(!UP);
+ 433   5                                      } 
+ 434   4                              }
+ 435   3                              break;
+ 436   3                              case 3:  //chinh giay
+ 437   3                              { 
+ 438   4                                      if(!DOWN)
+ 439   4                                      {
+ 440   5                                              delay_ms(20);
+ 441   5                                              sec--;
+ 442   5                                              if(sec<0)
+ 443   5                                                      sec=59;  time_4=0;
+ 444   5                                              while(!DOWN);
+ 445   5                                      }
+ 446   4                                      else if(!UP)
+ 447   4                                      {
+ 448   5                                              delay_ms(20);
+ 449   5                                              sec++;
+ 450   5                                              if(sec>59)
+ 451   5                                                      sec=0;  time_4=0;
+ 452   5                                              while(!UP);
+ 453   5                                      }
+ 454   4                              }
+ 455   3                              break;
+ 456   3                      }
+ 457   2                      Setting();
+ 458   2              }
+ 459   1      }
+ 460          /****************Ctr ngat timer0***************************/
+ 461          void INT_timer(void) interrupt 1 {    
+ 462   1              TF0 = 0;//Xoa co tran
+ 463   1              TH0 =0xe5;//nap lai gia tri
+ 464   1              TL0 =0xf8;
+ 465   1              //Cac bien dem
+ 466   1              //time_0++;
+ 467   1              //time_1++;
+ 468   1              time_3++;
+ 469   1              time_4++;
+ 470   1              time_5++;
+ 471   1      } 
+ 472          /****************Ctr chinh***************************/
+ 473          void main(){
+ 474   1              LED=0;
+ 475   1              DS1307_Write(7,10);//Tao xung 1Hz tu chan SOUT
+ 476   1              for(time_4=211;time_4>0;time_4--){//Quet led luc khoi dong
+ 477   2                      if(time_4==210) DOUT=0xfe;
+ 478   2                      else if(time_4==180) DOUT=0xfd;
+ 479   2                      else if(time_4==150) DOUT=0xfb;
+ 480   2                      else if(time_4==120) DOUT=0xf7;
+ 481   2                      else if(time_4==90) DOUT=0xef;
+ 482   2                      else if(time_4==60) DOUT=0xdf;
+ 483   2                      else if(time_4==30) DOUT=0xbf;
+ 484   2                      D1_8=0xfe;delay_ms(1);D1_8=0xfd;delay_ms(1);D1_8=0xfb;delay_ms(1);D1_8=0xf7;delay_ms(1);
+ 485   2                      D1_8=0xef; delay_ms(1);D1_8=0xdf;delay_ms(1);D1_8=0xbf;delay_ms(1);D1_8=0x7f;delay_ms(1);
+ 486   2                      D1_8=0xff;D9=0;delay_ms(1);D9=1;D10=0;delay_ms(1);D10=1;D11=0;delay_ms(1);D11=1;D12=0;delay_ms(1);D12=1;
+ 487   2              }
+ 488   1              if(SAVE==0){//Giu phim nay de reset lai ngay gio khi khoi dong
+C51 COMPILER V8.05a   CODE_CLOCK_DS1307                                                    05/13/2015 08:25:05 PAGE 9   
+
+ 489   2                      sec=0;min=0;hour=12;day=1;month=1;year=15;
+ 490   2                      DS1307_Set();
+ 491   2              }
+ 492   1              TR0=1; //chay timer 0
+ 493   1              ET0=1; //ngat timer 0 
+ 494   1              EA=1; //cho phep ngat
+ 495   1              DS1307_GetTime(); //Lay gio
+ 496   1              DS1307_GetDate(); //lay ngay
+ 497   1              LED=1;
+ 498   1          while(1){
+ 499   2                      ScanKey();//Quet nut nhan
+ 500   2                      if(time_3>100){ 
+ 501   3                              Convert_Number();//Chuyen doi so sang LED 7
+ 502   3                              time_3=0;
+ 503   3                      }
+ 504   2                      if(!KT_MODE){
+ 505   3                              if(SOUT)so=1;
+ 506   3                              if(!SOUT && so){
+ 507   4                                 sec=DS1307_Read(DS1307_SEC);
+ 508   4                                 if(sec==0)DS1307_GetTime();
+ 509   4                                 so=0;
+ 510   4                              }
+ 511   3                              if(hour==0 && min==0 && sec==0)DS1307_GetDate();//Lay du lieu ngay moi
+ 512   3                              LED=SOUT;        //LED giay nhap nhay chuan 1hz
+ 513   3                              Display();//hien thi ngay gio
+ 514   3                      }else LED=0;    
+ 515   2          }
+ 516   1      }
+ 517          /******************* THE END ***************************/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2008    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     36    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

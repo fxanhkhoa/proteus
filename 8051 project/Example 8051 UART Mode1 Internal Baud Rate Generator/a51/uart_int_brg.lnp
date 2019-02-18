@@ -1,0 +1,3 @@
+"uart_int_brg.obj" 
+TO "uart_int_brg" 
+RAMSIZE(256) 

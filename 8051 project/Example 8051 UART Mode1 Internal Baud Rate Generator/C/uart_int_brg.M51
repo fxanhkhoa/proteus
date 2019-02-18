@@ -1,0 +1,95 @@
+BL51 BANKED LINKER/LOCATER V5.03                                                        05/14/2004  11:12:47  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V5.03, INVOKED BY:
+C:\KEIL\C51\BIN\BL51.EXE uart_int_brg.obj TO uart_int_brg RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  uart_int_brg.obj (UART_INT_BRG)
+  C:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+
+
+LINK MAP OF MODULE:  uart_int_brg (UART_INT_BRG)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0001H     UNIT         ?DT?UART_INT_BRG
+            IDATA   0009H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0015H     UNIT         ?PR?MAIN?UART_INT_BRG
+                    0018H     000BH                  *** GAP ***
+            CODE    0023H     0003H     ABSOLUTE     
+            CODE    0026H     000FH     UNIT         ?PR?SERIAL_IT?UART_INT_BRG
+            CODE    0035H     000CH     UNIT         ?C_C51STARTUP
+
+
+
+OVERLAY MAP OF MODULE:   uart_int_brg (UART_INT_BRG)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?UART_INT_BRG
+
+
+
+SYMBOL TABLE OF MODULE:  uart_int_brg (UART_INT_BRG)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        UART_INT_BRG
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  C:0026H         PUBLIC        serial_IT
+  B:00A8H.7       PUBLIC        EA
+  B:00A8H.4       PUBLIC        ES
+  B:0098H.0       PUBLIC        RI
+  B:0098H.1       PUBLIC        TI
+  C:0003H         PUBLIC        main
+  D:0099H         PUBLIC        SBUF
+BL51 BANKED LINKER/LOCATER V5.03                                                      05/14/2004  11:12:47  PAGE 2
+
+
+  D:0098H         PUBLIC        SCON
+  D:009BH         PUBLIC        BDRCON
+  D:0008H         PUBLIC        uart_data
+  D:009AH         PUBLIC        BRL
+  -------         PROC          MAIN
+  C:0003H         LINE#         29
+  C:0003H         LINE#         30
+  C:0003H         LINE#         31
+  C:0006H         LINE#         32
+  C:0009H         LINE#         33
+  C:000CH         LINE#         34
+  C:000FH         LINE#         35
+  C:0011H         LINE#         36
+  C:0013H         LINE#         37
+  C:0016H         LINE#         39
+  -------         ENDPROC       MAIN
+  -------         PROC          SERIAL_IT
+  C:0026H         LINE#         47
+  C:0026H         LINE#         50
+  C:0029H         LINE#         51
+  C:0029H         LINE#         52
+  C:002BH         LINE#         53
+  C:002EH         LINE#         54
+  C:0031H         LINE#         55
+  C:0032H         LINE#         56
+  C:0034H         LINE#         58
+  -------         ENDPROC       SERIAL_IT
+  -------         ENDMOD        UART_INT_BRG
+
+Program Size: data=10.0 xdata=0 code=54
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)
